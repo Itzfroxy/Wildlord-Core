@@ -1,12 +1,19 @@
+
 const {
   SlashCommandBuilder,
   PermissionFlagsBits,
   EmbedBuilder
 } = require("discord.js");
 
+const { sendModLog } = require("../../utils/modLogger");
+
 async function banMember(guild, target, moderator, reason) {
   const member = await guild.members.fetch(target.id).catch(() => null);
   const executor = await guild.members.fetch(moderator.id);
+
+  if (!executor.permissions.has(PermissionFlagsBits.BanMembers)) {
+    return "❌ तुम्हारे पास Ban Members Permission नहीं है।";
+  }
 
   if (target.id === moderator.id) {
     return "❌ तुम खुद को Ban नहीं कर सकते।";
@@ -31,6 +38,13 @@ async function banMember(guild, target, moderator, reason) {
   try {
     await guild.members.ban(target.id, {
       reason: `${reason} | Moderator: ${moderator.tag}`
+    });
+
+    await sendModLog(guild, {
+      action: "BAN",
+      targetId: target.id,
+      moderatorId: moderator.id,
+      reason
     });
 
     return new EmbedBuilder()
@@ -88,14 +102,15 @@ module.exports = {
       reason
     );
 
-    await message.reply(
+    return message.reply(
       typeof result === "string" ? result : { embeds: [result] }
     );
   },
 
   async executeSlash(interaction) {
     const target = interaction.options.getUser("user");
-    const reason = interaction.options.getString("reason") || "No reason provided";
+    const reason =
+      interaction.options.getString("reason") || "No reason provided";
 
     const result = await banMember(
       interaction.guild,
@@ -104,7 +119,7 @@ module.exports = {
       reason
     );
 
-    await interaction.reply(
+    return interaction.reply(
       typeof result === "string" ? result : { embeds: [result] }
     );
   }
