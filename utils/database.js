@@ -61,7 +61,20 @@ function updateUser(guildId, userId, updates) {
   return data[key];
 }
 
+function getRank(guildId, userId) {
+  const data = readData();
+
+  const users = Object.entries(data)
+    .filter(([key]) => key.startsWith(`${guildId}-`))
+    .sort((a, b) => (b[1].xp || 0) - (a[1].xp || 0));
+
+  const index = users.findIndex(([key]) => key === `${guildId}-${userId}`);
+
+  return index === -1 ? users.length + 1 : index + 1;
+}
+
 module.exports = {
   getUser,
-  updateUser
+  updateUser,
+  getRank
 };
