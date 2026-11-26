@@ -1,48 +1,52 @@
 
+const { getUser } = require("../utils/database");
+
 module.exports = {
   name: "stats",
 
   async execute(message, args, client) {
-    const member = message.member;
+    const target = message.mentions.members.first() || message.member;
+    const data = getUser(message.guild.id, target.id);
 
-    const joinedAt = member.joinedAt
-      ? Math.floor(member.joinedAt.getTime() / 1000)
-      : null;
-
-    const createdAt = Math.floor(
-      message.author.createdAt.getTime() / 1000
-    );
+    const nextLevelXP = (data.level + 1) * 100;
+    const currentLevelXP = data.level * 100;
+    const progress = data.xp - currentLevelXP;
 
     const embed = {
       color: 0x8b5cf6,
-      title: `${message.author.username} - Stats`,
+      title: `${target.user.username} | Stats`,
       thumbnail: {
-        url: message.author.displayAvatarURL({ size: 256 })
+        url: target.user.displayAvatarURL({ size: 256 })
       },
       fields: [
         {
-          name: "User",
-          value: `${message.author}`,
+          name: "Level",
+          value: `${data.level}`,
           inline: true
         },
         {
-          name: "Server",
-          value: `${message.guild.name}`,
+          name: "XP",
+          value: `${data.xp}`,
           inline: true
         },
         {
-          name: "Account Created",
-          value: `<t:${createdAt}:R>`,
-          inline: false
+          name: "Progress",
+          value: `${progress} / 100 XP`,
+          inline: true
         },
         {
-          name: "Joined Server",
-          value: joinedAt ? `<t:${joinedAt}:R>` : "Unknown",
-          inline: false
+          name: "Messages",
+          value: `${data.messages}`,
+          inline: true
+        },
+        {
+          name: "Voice Time",
+          value: `${Math.floor(data.voiceTime / 60)} minutes`,
+          inline: true
         }
       ],
       footer: {
-        text: "Wildlord Core"
+        text: `Next level: ${nextLevelXP} XP • Wildlord Core`
       },
       timestamp: new Date().toISOString()
     };
