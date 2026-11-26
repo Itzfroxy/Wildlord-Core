@@ -5,18 +5,20 @@ async function renderStatsCard(member, data, rank = 1) {
   const canvas = createCanvas(900, 300);
   const ctx = canvas.getContext("2d");
 
+  const accent = data.cardColor || "#8b5cf6";
+
   // Background
   ctx.fillStyle = "#111827";
   ctx.fillRect(0, 0, 900, 300);
 
-  // Decorative background
+  // Card
   ctx.fillStyle = "#1f2937";
   ctx.beginPath();
   ctx.roundRect(20, 20, 860, 260, 24);
   ctx.fill();
 
-  // Accent
-  ctx.fillStyle = "#8b5cf6";
+  // Accent bar
+  ctx.fillStyle = accent;
   ctx.beginPath();
   ctx.roundRect(20, 20, 12, 260, 6);
   ctx.fill();
@@ -39,7 +41,7 @@ async function renderStatsCard(member, data, rank = 1) {
   ctx.fillText(member.user.username, 250, 85);
 
   // Level
-  ctx.fillStyle = "#c4b5fd";
+  ctx.fillStyle = accent;
   ctx.font = "bold 25px sans-serif";
   ctx.fillText(`LEVEL ${data.level}`, 250, 130);
 
@@ -51,7 +53,7 @@ async function renderStatsCard(member, data, rank = 1) {
   ctx.fillText(`Voice: ${Math.floor(data.voiceTime / 60)} min`, 250, 215);
   ctx.fillText(`Rank: #${rank}`, 480, 215);
 
-  // Progress bar
+  // Progress
   const progress = data.xp % 100;
 
   ctx.fillStyle = "#374151";
@@ -59,7 +61,7 @@ async function renderStatsCard(member, data, rank = 1) {
   ctx.roundRect(250, 235, 550, 20, 10);
   ctx.fill();
 
-  ctx.fillStyle = "#8b5cf6";
+  ctx.fillStyle = accent;
   ctx.beginPath();
   ctx.roundRect(250, 235, Math.max(10, 550 * progress / 100), 20, 10);
   ctx.fill();
@@ -72,4 +74,3 @@ async function renderStatsCard(member, data, rank = 1) {
 }
 
 module.exports = { renderStatsCard };
-  
