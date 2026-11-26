@@ -1,81 +1,97 @@
 
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
+const {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle
+} = require("discord.js");
+
+const { getUser, updateUser } = require("../utils/database");
 
 module.exports = {
   name: "card",
 
   async execute(message) {
-    const embed = new EmbedBuilder()
-      .setColor(0x8b5cf6)
-      .setTitle("🎨 Card Customization")
-      .setDescription(
-        "Welcome to Wildlord Core Card Customization!\n\n" +
-        "Customize your profile card using the buttons below.\n\n" +
-        "Choose an option to get started."
-      )
-      .setThumbnail(message.author.displayAvatarURL({ size: 256 }))
-      .setFooter({ text: "Wildlord Core • Card Menu" });
+    getUser(message.guild.id, message.author.id);
 
-    const row = new ActionRowBuilder().addComponents(
+    const row1 = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
-        .setCustomId("wildlord_customize")
-        .setLabel("Customize")
+        .setCustomId("wc_purple")
+        .setLabel("Purple")
         .setStyle(ButtonStyle.Primary),
 
       new ButtonBuilder()
-        .setCustomId("wildlord_surprise")
-        .setLabel("Surprise Me")
-        .setStyle(ButtonStyle.Secondary),
+        .setCustomId("wc_blue")
+        .setLabel("Blue")
+        .setStyle(ButtonStyle.Primary),
 
       new ButtonBuilder()
-        .setCustomId("wildlord_done")
-        .setLabel("Done")
-        .setStyle(ButtonStyle.Success)
+        .setCustomId("wc_green")
+        .setLabel("Green")
+        .setStyle(ButtonStyle.Success),
+
+      new ButtonBuilder()
+        .setCustomId("wc_red")
+        .setLabel("Red")
+        .setStyle(ButtonStyle.Danger)
     );
 
-    const sent = await message.reply({
-      embeds: [embed],
-      components: [row]
+    const row2 = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId("wc_done")
+        .setLabel("Done")
+        .setStyle(ButtonStyle.Secondary)
+    );
+
+    const menu = await message.reply({
+      content: "🎨 **Wildlord Core — Card Customization**\nChoose a colour for your Stats Card:",
+      components: [row1, row2]
     });
 
-    const collector = sent.createMessageComponentCollector({
+    const collector = menu.createMessageComponentCollector({
       time: 120000
     });
 
     collector.on("collect", async interaction => {
       if (interaction.user.id !== message.author.id) {
         return interaction.reply({
-          content: "This card menu is not yours!",
+          content: "This menu belongs to another user.",
           ephemeral: true
         });
       }
 
-      if (interaction.customId === "wildlord_customize") {
-        await interaction.reply({
-          content: "🎨 More customization options are coming soon!",
-          ephemeral: true
-        });
-      }
+      const colors = {
+        wc_purple: "#8b5cf6",
+        wc_blue: "#3b82f6",
+        wc_green: "#22c55e",
+        wc_red: "#ef4444"
+      };
 
-      if (interaction.customId === "wildlord_surprise") {
-        await interaction.reply({
-          content: "✨ Surprise designs are coming soon!",
-          ephemeral: true
-        });
-      }
-
-      if (interaction.customId === "wildlord_done") {
-        await interaction.reply({
-          content: "✅ Menu closed!",
-          ephemeral: true
+      if (interaction.customId === "wc_done") {
+        await interaction.update({
+          content: "✅ Card customization finished!",
+          components: []
         });
         collector.stop();
+        return;
       }
+
+      const color = colors[interaction.customId];
+
+      if (!color) return;
+
+      updateUser(message.guild.id, message.author.id, {
+        cardColor: color
+      });
+
+      await interaction.reply({
+        content: `✅ Your card colour has been saved: ${color}\nUse ,stats to see your card.`,
+        ephemeral: true
+      });
     });
 
     collector.on("end", async () => {
       try {
-        await sent.edit({ components: [] });
+        await menu.edit({ components: [] });
       } catch {}
     });
   }
