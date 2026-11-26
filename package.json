@@ -1,15 +1,17 @@
-
 {
   "name": "wildlord-core",
   "version": "1.0.0",
   "description": "Wildlord Core Discord Bot",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "deploy": "node src/deploy-commands.js"
+  },
+  "engines": {
+    "node": ">=18.20.0"
   },
   "dependencies": {
     "discord.js": "^14.19.3",
-    "dotenv": "^16.4.7",
-    "@napi-rs/canvas": "^0.1.80"
+    "dotenv": "^16.4.7"
   }
 }
