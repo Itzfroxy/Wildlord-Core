@@ -24,7 +24,7 @@ async function muteMember(guild, target, moderator) {
     return "❌ तुम अपनी बराबर या ऊपर की Role वाले Member को Mute नहीं कर सकते।";
   }
 
-  if (!member.muteable) {
+  if (!member.manageable) {
     return "❌ Bot इस Member को Mute नहीं कर सकता।";
   }
 
