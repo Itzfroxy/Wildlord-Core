@@ -36,9 +36,6 @@ async function moveMember(guild, target, moderator, channel) {
     return "❌ तुम अपनी बराबर या ऊपर की Role वाले Member को Move नहीं कर सकते।";
   }
 
-  if (!member.moderatable) {
-    return "❌ Bot इस Member को Manage नहीं कर सकता।";
-  }
 
   try {
     await member.voice.setChannel(
