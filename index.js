@@ -17,6 +17,7 @@ const client = new Client({
 });
 
 client.commands = new Collection();
+require("./events/voiceStateUpdate")(client);
 client.prefix = ",";
 
 const cooldowns = new Map();
