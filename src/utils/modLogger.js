@@ -1,6 +1,6 @@
 
 const { EmbedBuilder } = require("discord.js");
-const { getGuild } = require("./database");
+const { getGuild, updateGuild } = require("./database");
 
 async function sendModLog(guild, {
   action,
