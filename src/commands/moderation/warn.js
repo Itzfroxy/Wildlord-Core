@@ -1,3 +1,4 @@
+
 const {
   SlashCommandBuilder,
   PermissionFlagsBits,
@@ -5,6 +6,7 @@ const {
 } = require("discord.js");
 
 const { getUser, updateUser } = require("../../utils/database");
+const { sendModLog } = require("../../utils/modLogger");
 
 async function warnMember(guild, target, moderator, reason) {
   const executor = await guild.members.fetch(moderator.id);
@@ -38,6 +40,14 @@ async function warnMember(guild, target, moderator, reason) {
   warnings.push(warning);
 
   updateUser(guild.id, target.id, { warnings });
+
+  await sendModLog(guild, {
+    action: "WARN",
+    targetId: target.id,
+    moderatorId: moderator.id,
+    reason,
+    details: `Total Warnings: ${warnings.length}`
+  });
 
   const embed = new EmbedBuilder()
     .setColor("#E67E22")
@@ -89,7 +99,7 @@ module.exports = {
       message.guild, target, message.author, reason
     );
 
-    await message.reply(
+    return message.reply(
       typeof result === "string" ? result : { embeds: [result] }
     );
   },
@@ -102,7 +112,7 @@ module.exports = {
       interaction.guild, target, interaction.user, reason
     );
 
-    await interaction.reply(
+    return interaction.reply(
       typeof result === "string" ? result : { embeds: [result] }
     );
   }
