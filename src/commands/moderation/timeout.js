@@ -1,14 +1,18 @@
+
 const {
   SlashCommandBuilder,
   PermissionFlagsBits,
   EmbedBuilder
 } = require("discord.js");
 
+const { sendModLog } = require("../../utils/modLogger");
+
 function parseDuration(input) {
   const match = input.match(/^(\d+)(s|m|h|d)$/i);
   if (!match) return null;
 
   const amount = Number(match[1]);
+
   const units = {
     s: 1000,
     m: 60000,
@@ -50,6 +54,14 @@ async function timeoutMember(guild, target, moderator, duration, reason) {
 
   try {
     await member.timeout(duration, reason);
+
+    await sendModLog(guild, {
+      action: "TIMEOUT",
+      targetId: target.id,
+      moderatorId: moderator.id,
+      reason,
+      details: `Duration: ${duration / 1000} seconds`
+    });
 
     return new EmbedBuilder()
       .setColor("#E67E22")
@@ -111,13 +123,14 @@ module.exports = {
       message.guild, target, message.author, duration, reason
     );
 
-    await message.reply(
+    return message.reply(
       typeof result === "string" ? result : { embeds: [result] }
     );
   },
 
   async executeSlash(interaction) {
     const target = interaction.options.getUser("user");
+
     const duration = parseDuration(
       interaction.options.getString("duration")
     );
@@ -129,13 +142,14 @@ module.exports = {
       });
     }
 
-    const reason = interaction.options.getString("reason") || "No reason provided";
+    const reason =
+      interaction.options.getString("reason") || "No reason provided";
 
     const result = await timeoutMember(
       interaction.guild, target, interaction.user, duration, reason
     );
 
-    await interaction.reply(
+    return interaction.reply(
       typeof result === "string" ? result : { embeds: [result] }
     );
   }
