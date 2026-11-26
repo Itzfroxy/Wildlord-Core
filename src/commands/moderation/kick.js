@@ -12,6 +12,12 @@ async function kickMember(guild, target, moderator, reason) {
   if (member.id === moderator.id) return "❌ तुम खुद को Kick नहीं कर सकते।";
   if (member.id === guild.ownerId) return "❌ Server Owner को Kick नहीं कर सकते।";
   if (!member.kickable) return "❌ Bot इस Member को Kick नहीं कर सकता। Role Hierarchy चेक करो।";
+  if (
+  guild.ownerId !== moderator.id &&
+  executor.roles.highest.comparePositionTo(member.roles.highest) <= 0
+) {
+  return "❌ तुम अपनी बराबर या ऊपर की Role वाले Member को Kick नहीं कर सकते।";
+  }
 
   if (!executor.permissions.has(PermissionFlagsBits.KickMembers)) {
     return "❌ तुम्हारे पास Kick Members Permission नहीं है।";
