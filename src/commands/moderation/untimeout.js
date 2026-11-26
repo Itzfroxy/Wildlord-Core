@@ -1,8 +1,11 @@
+
 const {
   SlashCommandBuilder,
   PermissionFlagsBits,
   EmbedBuilder
 } = require("discord.js");
+
+const { sendModLog } = require("../../utils/modLogger");
 
 async function removeTimeout(guild, target, moderator, reason) {
   const executor = await guild.members.fetch(moderator.id);
@@ -13,6 +16,10 @@ async function removeTimeout(guild, target, moderator, reason) {
   }
 
   if (!member) return "❌ Member Server में नहीं मिला।";
+
+  if (member.id === moderator.id) {
+    return "❌ तुम खुद का Timeout नहीं हटा सकते।";
+  }
 
   if (
     guild.ownerId !== moderator.id &&
@@ -31,6 +38,13 @@ async function removeTimeout(guild, target, moderator, reason) {
 
   try {
     await member.timeout(null, reason);
+
+    await sendModLog(guild, {
+      action: "UNTIMEOUT",
+      targetId: target.id,
+      moderatorId: moderator.id,
+      reason
+    });
 
     return new EmbedBuilder()
       .setColor("#2ECC71")
@@ -68,31 +82,33 @@ module.exports = {
     .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
 
   async execute(message, args) {
-    if (!message.mentions.users.first()) {
+    const target = message.mentions.users.first();
+
+    if (!target) {
       return message.reply("Usage: `,untimeout @user [reason]`");
     }
 
-    const target = message.mentions.users.first();
     const reason = args.slice(1).join(" ") || "No reason provided";
 
     const result = await removeTimeout(
       message.guild, target, message.author, reason
     );
 
-    await message.reply(
+    return message.reply(
       typeof result === "string" ? result : { embeds: [result] }
     );
   },
 
   async executeSlash(interaction) {
     const target = interaction.options.getUser("user");
-    const reason = interaction.options.getString("reason") || "No reason provided";
+    const reason =
+      interaction.options.getString("reason") || "No reason provided";
 
     const result = await removeTimeout(
       interaction.guild, target, interaction.user, reason
     );
 
-    await interaction.reply(
+    return interaction.reply(
       typeof result === "string" ? result : { embeds: [result] }
     );
   }
