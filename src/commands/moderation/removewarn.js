@@ -5,10 +5,19 @@ const {
 } = require("discord.js");
 
 const { getUser, updateUser } = require("../../utils/database");
+const { sendModLog } = require("../../utils/modLogger");
 
-function removeWarning(guildId, targetId, number) {
-  const userData = getUser(guildId, targetId);
-  const warnings = userData.warnings || [];
+async function removeWarning(guild, target, moderator, number) {
+  const executor = await guild.members.fetch(moderator.id);
+
+  if (!executor.permissions.has(PermissionFlagsBits.ModerateMembers)) {
+    return "❌ तुम्हारे पास Moderate Members Permission नहीं है।";
+  }
+
+  const userData = getUser(guild.id, target.id);
+  const warnings = Array.isArray(userData.warnings)
+    ? userData.warnings
+    : [];
 
   if (!Number.isInteger(number) || number < 1 || number > warnings.length) {
     return `❌ गलत Warning Number! इस Member के पास ${warnings.length} Warnings हैं।`;
@@ -17,9 +26,16 @@ function removeWarning(guildId, targetId, number) {
   const index = warnings.length - number;
   const removed = warnings.splice(index, 1)[0];
 
-  updateUser(guildId, targetId, { warnings });
+  updateUser(guild.id, target.id, { warnings });
 
-  return `✅ Warning #${number} हटा दी गई।\n**Reason:** ${removed.reason}`;
+  await sendModLog(guild, {
+    action: "UNWARN",
+    targetId: target.id,
+    moderatorId: moderator.id,
+    reason: `Warning #${number} removed: ${removed.reason || "No reason provided"}`
+  });
+
+  return `✅ Warning #${number} हटा दी गई।\n**Reason:** ${removed.reason || "No reason provided"}`;
 }
 
 module.exports = {
@@ -43,10 +59,6 @@ module.exports = {
     .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
 
   async execute(message, args) {
-    if (!message.member.permissions.has(PermissionFlagsBits.ModerateMembers)) {
-      return message.reply("❌ तुम्हारे पास Moderate Members Permission नहीं है।");
-    }
-
     const target = message.mentions.users.first();
 
     if (!target) {
@@ -55,17 +67,29 @@ module.exports = {
 
     const number = Number(args[1]);
 
-    return message.reply(
-      removeWarning(message.guild.id, target.id, number)
+    const result = await removeWarning(
+      message.guild,
+      target,
+      message.author,
+      number
     );
+
+    return message.reply(result);
   },
 
   async executeSlash(interaction) {
     const target = interaction.options.getUser("user");
     const number = interaction.options.getInteger("number");
 
+    const result = await removeWarning(
+      interaction.guild,
+      target,
+      interaction.user,
+      number
+    );
+
     return interaction.reply({
-      content: removeWarning(interaction.guild.id, target.id, number),
+      content: result,
       ephemeral: true
     });
   }
