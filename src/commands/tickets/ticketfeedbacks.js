@@ -1,3 +1,4 @@
+
 const {
   SlashCommandBuilder,
   PermissionFlagsBits,
@@ -5,6 +6,34 @@ const {
 } = require("discord.js");
 
 const { getTicket } = require("../../utils/ticketManager");
+
+function createFeedbackEmbed(ticket) {
+  const feedback = ticket.feedback;
+
+  if (
+    !feedback ||
+    !Number.isInteger(Number(feedback.rating)) ||
+    Number(feedback.rating) < 1 ||
+    Number(feedback.rating) > 5
+  ) {
+    return null;
+  }
+
+  const embed = new EmbedBuilder()
+    .setColor("#F1C40F")
+    .setTitle("⭐ Ticket Feedback")
+    .addFields(
+      { name: "Rating", value: `${feedback.rating}/5 ⭐`, inline: true },
+      { name: "User", value: feedback.userId ? `<@${feedback.userId}>` : "Unknown", inline: true },
+      { name: "Comment", value: feedback.comment || "कोई Comment नहीं" }
+    );
+
+  if (feedback.createdAt) {
+    embed.setTimestamp(new Date(feedback.createdAt));
+  }
+
+  return embed;
+}
 
 module.exports = {
   name: "ticketfeedbacks",
@@ -25,21 +54,11 @@ module.exports = {
       return message.reply("❌ यह Ticket Channel नहीं है।");
     }
 
-    const feedback = ticket.feedback;
+    const embed = createFeedbackEmbed(ticket);
 
-    if (!feedback) {
-      return message.reply("📭 इस Ticket में Feedback नहीं है।");
+    if (!embed) {
+      return message.reply("📭 इस Ticket में Feedback उपलब्ध नहीं है।");
     }
-
-    const embed = new EmbedBuilder()
-      .setColor("#F1C40F")
-      .setTitle("⭐ Ticket Feedback")
-      .addFields(
-        { name: "Rating", value: `${feedback.rating}/5 ⭐`, inline: true },
-        { name: "User", value: `<@${feedback.userId}>`, inline: true },
-        { name: "Comment", value: feedback.comment || "कोई Comment नहीं" }
-      )
-      .setTimestamp(feedback.createdAt);
 
     return message.reply({ embeds: [embed] });
   },
@@ -64,24 +83,14 @@ module.exports = {
       });
     }
 
-    const feedback = ticket.feedback;
+    const embed = createFeedbackEmbed(ticket);
 
-    if (!feedback) {
+    if (!embed) {
       return interaction.reply({
-        content: "📭 इस Ticket में Feedback नहीं है।",
+        content: "📭 इस Ticket में Feedback उपलब्ध नहीं है।",
         ephemeral: true
       });
     }
-
-    const embed = new EmbedBuilder()
-      .setColor("#F1C40F")
-      .setTitle("⭐ Ticket Feedback")
-      .addFields(
-        { name: "Rating", value: `${feedback.rating}/5 ⭐`, inline: true },
-        { name: "User", value: `<@${feedback.userId}>`, inline: true },
-        { name: "Comment", value: feedback.comment || "कोई Comment नहीं" }
-      )
-      .setTimestamp(feedback.createdAt);
 
     return interaction.reply({
       embeds: [embed],
