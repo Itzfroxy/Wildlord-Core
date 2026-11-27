@@ -1,3 +1,4 @@
+
 const {
   SlashCommandBuilder,
   PermissionFlagsBits,
@@ -25,10 +26,11 @@ module.exports = {
       return message.reply("❌ तुम्हें Manage Server permission चाहिए।");
     }
 
-    const channel = message.guild.channels.cache.get(args[0]);
+    const channelId = args[0]?.replace(/[<#>]/g, "");
+    const channel = message.guild.channels.cache.get(channelId);
 
     if (!channel || channel.type !== ChannelType.GuildText) {
-      return message.reply("❌ सही Text Channel ID डालो।");
+      return message.reply("❌ सही Text Channel ID या Mention डालो।");
     }
 
     saveTicketConfig(message.guild.id, {
@@ -49,6 +51,13 @@ module.exports = {
     }
 
     const channel = interaction.options.getChannel("channel");
+
+    if (!channel || channel.type !== ChannelType.GuildText) {
+      return interaction.reply({
+        content: "❌ सही Text Channel चुनो।",
+        ephemeral: true
+      });
+    }
 
     saveTicketConfig(interaction.guild.id, {
       feedbackChannelId: channel.id
