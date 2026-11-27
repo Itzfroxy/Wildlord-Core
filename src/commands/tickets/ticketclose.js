@@ -18,7 +18,13 @@ module.exports = {
     .setDescription("Close the current ticket"),
 
   async execute(message) {
-    await closeTicket(message.channel, message.member, message.guild, message);
+    const result = await closeTicket(
+      message.channel,
+      message.member,
+      message.guild
+    );
+
+    return message.reply(result);
   },
 
   async executeSlash(interaction) {
@@ -27,26 +33,18 @@ module.exports = {
     const result = await closeTicket(
       interaction.channel,
       interaction.member,
-      interaction.guild,
-      interaction
+      interaction.guild
     );
 
-    if (result) {
-      return interaction.editReply("✅ Ticket बंद कर दिया गया।");
-    }
-
-    return interaction.editReply("❌ Ticket बंद नहीं हो सका।");
+    return interaction.editReply(result);
   }
 };
 
-async function closeTicket(channel, member, guild, source) {
+async function closeTicket(channel, member, guild) {
   const ticket = getTicket(guild.id, channel.id);
 
   if (!ticket || ticket.status !== "open") {
-    if (source.reply) {
-      return source.reply("❌ यह खुला Ticket नहीं है।");
-    }
-    return false;
+    return "❌ यह खुला Ticket नहीं है।";
   }
 
   const config = getTicketData(guild.id).ticketConfig;
@@ -56,10 +54,7 @@ async function closeTicket(channel, member, guild, source) {
     (config.staffRoleId && member.roles.cache.has(config.staffRoleId));
 
   if (!isStaff && ticket.ownerId !== member.id) {
-    if (source.reply) {
-      return source.reply("❌ केवल Ticket Owner या Staff इसे बंद कर सकता है।");
-    }
-    return false;
+    return "❌ केवल Ticket Owner या Staff इसे बंद कर सकता है।";
   }
 
   saveTicket(guild.id, {
@@ -74,9 +69,5 @@ async function closeTicket(channel, member, guild, source) {
 
   await channel.send("🔒 Ticket बंद कर दिया गया है।");
 
-  if (source.reply) {
-    return source.reply("✅ Ticket बंद कर दिया गया।");
-  }
-
-  return true;
+  return "✅ Ticket बंद कर दिया गया।";
 }
