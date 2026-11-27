@@ -24,14 +24,14 @@ module.exports = {
     ),
 
   async execute(message, args) {
+    if (!message.member.permissions.has(PermissionFlagsBits.ManageChannels)) {
+      return message.reply("❌ तुम्हें Manage Channels permission चाहिए।");
+    }
+
     const ticket = getTicket(message.guild.id, message.channel.id);
 
     if (!ticket) {
       return message.reply("❌ यह Ticket Channel नहीं है।");
-    }
-
-    if (!message.member.permissions.has(PermissionFlagsBits.ManageChannels)) {
-      return message.reply("❌ तुम्हें Manage Channels permission चाहिए।");
     }
 
     const level = args[0]?.toLowerCase();
@@ -43,12 +43,12 @@ module.exports = {
     };
 
     if (!priorities[level]) {
-      return message.reply("❌ Priority: low, medium या high डालो।");
+      return message.reply("❌ low, medium या high डालो।");
     }
 
     ticket.priority = priorities[level];
 
-    saveTicket(message.guild.id, message.channel.id, ticket);
+    saveTicket(message.guild.id, ticket);
 
     return message.reply(
       `✅ Ticket Priority **${priorities[level]}** सेट कर दी गई।`
@@ -56,7 +56,17 @@ module.exports = {
   },
 
   async executeSlash(interaction) {
-    const ticket = getTicket(interaction.guild.id, interaction.channel.id);
+    if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageChannels)) {
+      return interaction.reply({
+        content: "❌ तुम्हें Manage Channels permission चाहिए।",
+        ephemeral: true
+      });
+    }
+
+    const ticket = getTicket(
+      interaction.guild.id,
+      interaction.channel.id
+    );
 
     if (!ticket) {
       return interaction.reply({
@@ -65,18 +75,11 @@ module.exports = {
       });
     }
 
-    if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageChannels)) {
-      return interaction.reply({
-        content: "❌ तुम्हें Manage Channels permission चाहिए।",
-        ephemeral: true
-      });
-    }
-
     const level = interaction.options.getString("level");
 
     ticket.priority = level;
 
-    saveTicket(interaction.guild.id, interaction.channel.id, ticket);
+    saveTicket(interaction.guild.id, ticket);
 
     return interaction.reply(
       `✅ Ticket Priority **${level}** सेट कर दी गई।`
