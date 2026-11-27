@@ -2,7 +2,10 @@
 const {
   ChannelType,
   PermissionFlagsBits,
-  EmbedBuilder
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle
 } = require("discord.js");
 
 const {
@@ -124,11 +127,34 @@ module.exports = {
         )
         .setTimestamp();
 
+      const row1 = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId("ticket:claim")
+          .setLabel("Claim")
+          .setEmoji("🙋")
+          .setStyle(ButtonStyle.Primary),
+
+        new ButtonBuilder()
+          .setCustomId("ticket:close")
+          .setLabel("Close")
+          .setEmoji("🔒")
+          .setStyle(ButtonStyle.Danger)
+      );
+
+      const row2 = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId("ticket:reopen")
+          .setLabel("Reopen")
+          .setEmoji("🔓")
+          .setStyle(ButtonStyle.Success)
+      );
+
       await channel.send({
         content: config.staffRoleId
           ? `<@&${config.staffRoleId}> ${user}`
           : `${user}`,
-        embeds: [embed]
+        embeds: [embed],
+        components: [row1, row2]
       });
 
       return interaction.editReply(
