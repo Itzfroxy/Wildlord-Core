@@ -1,3 +1,4 @@
+
 const {
   SlashCommandBuilder,
   PermissionFlagsBits
@@ -71,6 +72,13 @@ module.exports = {
     }
 
     const noteText = interaction.options.getString("note").trim();
+
+    if (!noteText) {
+      return interaction.reply({
+        content: "❌ Note लिखो।",
+        ephemeral: true
+      });
+    }
 
     if (!Array.isArray(ticket.notes)) {
       ticket.notes = [];
