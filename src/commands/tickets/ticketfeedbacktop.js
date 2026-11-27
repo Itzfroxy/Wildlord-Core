@@ -1,3 +1,4 @@
+
 const {
   SlashCommandBuilder,
   PermissionFlagsBits,
@@ -5,6 +6,35 @@ const {
 } = require("discord.js");
 
 const { getTicketData } = require("../../utils/ticketManager");
+
+function createFeedbackEmbed(guildId) {
+  const tickets = getTicketData(guildId).tickets;
+
+  const feedbacks = tickets
+    .filter(ticket =>
+      ticket.feedback &&
+      Number.isInteger(Number(ticket.feedback.rating)) &&
+      Number(ticket.feedback.rating) >= 1 &&
+      Number(ticket.feedback.rating) <= 5
+    )
+    .sort((a, b) =>
+      Number(b.feedback.rating) - Number(a.feedback.rating)
+    )
+    .slice(0, 10);
+
+  if (!feedbacks.length) return null;
+
+  return new EmbedBuilder()
+    .setColor("#F1C40F")
+    .setTitle("🏆 Top Ticket Feedback")
+    .setDescription(
+      feedbacks.map((ticket, index) =>
+        `**${index + 1}.** <@${ticket.feedback.userId || "0"}> — ` +
+        `${ticket.feedback.rating}/5 ⭐\n` +
+        `Ticket: <#${ticket.channelId}>`
+      ).join("\n\n")
+    );
+}
 
 module.exports = {
   name: "ticketfeedbacktop",
@@ -19,27 +49,11 @@ module.exports = {
       return message.reply("❌ तुम्हें Manage Channels permission चाहिए।");
     }
 
-    const tickets = getTicketData(message.guild.id).tickets || [];
+    const embed = createFeedbackEmbed(message.guild.id);
 
-    const feedbacks = tickets
-      .filter(ticket => ticket.feedback)
-      .sort((a, b) => b.feedback.rating - a.feedback.rating)
-      .slice(0, 10);
-
-    if (!feedbacks.length) {
+    if (!embed) {
       return message.reply("📭 कोई Feedback उपलब्ध नहीं है।");
     }
-
-    const embed = new EmbedBuilder()
-      .setColor("#F1C40F")
-      .setTitle("🏆 Top Ticket Feedback")
-      .setDescription(
-        feedbacks.map((ticket, index) =>
-          `**${index + 1}.** <@${ticket.feedback.userId}> — ` +
-          `${ticket.feedback.rating}/5 ⭐\n` +
-          `Ticket: <#${ticket.channelId}>`
-        ).join("\n\n")
-      );
 
     return message.reply({ embeds: [embed] });
   },
@@ -52,30 +66,14 @@ module.exports = {
       });
     }
 
-    const tickets = getTicketData(interaction.guild.id).tickets || [];
+    const embed = createFeedbackEmbed(interaction.guild.id);
 
-    const feedbacks = tickets
-      .filter(ticket => ticket.feedback)
-      .sort((a, b) => b.feedback.rating - a.feedback.rating)
-      .slice(0, 10);
-
-    if (!feedbacks.length) {
+    if (!embed) {
       return interaction.reply({
         content: "📭 कोई Feedback उपलब्ध नहीं है।",
         ephemeral: true
       });
     }
-
-    const embed = new EmbedBuilder()
-      .setColor("#F1C40F")
-      .setTitle("🏆 Top Ticket Feedback")
-      .setDescription(
-        feedbacks.map((ticket, index) =>
-          `**${index + 1}.** <@${ticket.feedback.userId}> — ` +
-          `${ticket.feedback.rating}/5 ⭐\n` +
-          `Ticket: <#${ticket.channelId}>`
-        ).join("\n\n")
-      );
 
     return interaction.reply({
       embeds: [embed],
