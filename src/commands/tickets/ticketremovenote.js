@@ -1,3 +1,4 @@
+
 const {
   SlashCommandBuilder,
   PermissionFlagsBits
@@ -34,13 +35,28 @@ module.exports = {
       return message.reply("❌ इस Ticket में कोई Staff Note नहीं है।");
     }
 
+    const notes = ticket.notes;
+    const visibleNotes = notes.slice(-10);
     const number = parseInt(args[0], 10);
 
-    if (!Number.isInteger(number) || number < 1 || number > ticket.notes.length) {
-      return message.reply("❌ सही Note Number डालो।");
+    if (
+      !Number.isInteger(number) ||
+      number < 1 ||
+      number > visibleNotes.length
+    ) {
+      return message.reply(
+        `❌ सही Note Number डालो (1-${visibleNotes.length})।`
+      );
     }
 
-    ticket.notes.splice(number - 1, 1);
+    const noteToRemove = visibleNotes[number - 1];
+    const actualIndex = notes.indexOf(noteToRemove);
+
+    if (actualIndex === -1) {
+      return message.reply("❌ Note नहीं मिला।");
+    }
+
+    notes.splice(actualIndex, 1);
     saveTicket(message.guild.id, ticket);
 
     return message.reply(`✅ Note #${number} हटा दिया गया।`);
@@ -73,16 +89,28 @@ module.exports = {
       });
     }
 
+    const notes = ticket.notes;
+    const visibleNotes = notes.slice(-10);
     const number = interaction.options.getInteger("number");
 
-    if (number > ticket.notes.length) {
+    if (number > visibleNotes.length) {
       return interaction.reply({
-        content: "❌ इतना Note Number मौजूद नहीं है।",
+        content: `❌ सही Note Number डालो (1-${visibleNotes.length})।`,
         ephemeral: true
       });
     }
 
-    ticket.notes.splice(number - 1, 1);
+    const noteToRemove = visibleNotes[number - 1];
+    const actualIndex = notes.indexOf(noteToRemove);
+
+    if (actualIndex === -1) {
+      return interaction.reply({
+        content: "❌ Note नहीं मिला।",
+        ephemeral: true
+      });
+    }
+
+    notes.splice(actualIndex, 1);
     saveTicket(interaction.guild.id, ticket);
 
     return interaction.reply({
