@@ -1,4 +1,3 @@
-
 const {
   ChannelType,
   PermissionFlagsBits,
@@ -24,38 +23,38 @@ module.exports = {
     await interaction.deferReply({ ephemeral: true });
 
     try {
-      const guild = interaction.guild;
-      const user = interaction.user;
-
-      if (!guild) {
-        return interaction.editReply("❌ Server में ही Ticket खोल सकते हो।");
+      if (!interaction.guild) {
+        return interaction.editReply("❌ Server के अंदर ही ticket खोल सकते हो।");
       }
 
+      const guild = interaction.guild;
+      const user = interaction.user;
       const config = getTicketData(guild.id).ticketConfig;
+
+      if (config.enabled === false) {
+        return interaction.editReply("❌ Ticket system अभी configure नहीं हुआ है।");
+      }
 
       const existing = getUserOpenTicket(guild.id, user.id);
 
       if (existing) {
-        const existingChannel = await guild.channels
-          .fetch(existing.channelId)
-          .catch(() => null);
-
-        if (existingChannel) {
-          return interaction.editReply(
-            `❌ तुम्हारा Ticket पहले से खुला है: ${existingChannel}`
-          );
-        }
-      }
-
-      const botMember = guild.members.me;
-
-      if (!botMember.permissions.has(PermissionFlagsBits.ManageChannels)) {
         return interaction.editReply(
-          "❌ Bot के पास Manage Channels Permission नहीं है।"
+          `❌ तुम्हारा ticket पहले से खुला है: <#${existing.channelId}>`
         );
       }
 
-      const overwrites = [
+      if (!guild.members.me.permissions.has(PermissionFlagsBits.ManageChannels)) {
+        return interaction.editReply(
+          "❌ Bot के पास Manage Channels permission नहीं है।"
+        );
+      }
+
+      const channelName = `ticket-${user.username}`
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, "")
+        .slice(0, 90);
+
+      const permissionOverwrites = [
         {
           id: guild.id,
           deny: [PermissionFlagsBits.ViewChannel]
@@ -65,11 +64,12 @@ module.exports = {
           allow: [
             PermissionFlagsBits.ViewChannel,
             PermissionFlagsBits.SendMessages,
-            PermissionFlagsBits.ReadMessageHistory
+            PermissionFlagsBits.ReadMessageHistory,
+            PermissionFlagsBits.AttachFiles
           ]
         },
         {
-          id: botMember.id,
+          id: client.user.id,
           allow: [
             PermissionFlagsBits.ViewChannel,
             PermissionFlagsBits.SendMessages,
@@ -80,30 +80,21 @@ module.exports = {
       ];
 
       if (config.staffRoleId) {
-        const staffRole = guild.roles.cache.get(config.staffRoleId);
-
-        if (staffRole) {
-          overwrites.push({
-            id: staffRole.id,
-            allow: [
-              PermissionFlagsBits.ViewChannel,
-              PermissionFlagsBits.SendMessages,
-              PermissionFlagsBits.ReadMessageHistory
-            ]
-          });
-        }
+        permissionOverwrites.push({
+          id: config.staffRoleId,
+          allow: [
+            PermissionFlagsBits.ViewChannel,
+            PermissionFlagsBits.SendMessages,
+            PermissionFlagsBits.ReadMessageHistory
+          ]
+        });
       }
 
-      const channelName = `ticket-${user.username}`
-        .toLowerCase()
-        .replace(/[^a-z0-9-]/g, "")
-        .slice(0, 90);
-
       const channel = await guild.channels.create({
-        name: channelName || `ticket-${user.id}`,
+        name: channelName,
         type: ChannelType.GuildText,
         parent: config.categoryId || undefined,
-        permissionOverwrites: overwrites,
+        permissionOverwrites,
         reason: `Ticket opened by ${user.tag}`
       });
 
@@ -119,54 +110,42 @@ module.exports = {
         .setColor(config.panelColor || "#5865F2")
         .setTitle("🎫 Support Ticket")
         .setDescription(
-          `Hello ${user}!\n\nYour support ticket has been created. Staff will assist you soon.`
-        )
-        .addFields(
-          { name: "Ticket Owner", value: `${user}`, inline: true },
-          { name: "Status", value: "🟢 Open", inline: true }
+          `Welcome <@${user.id}>!\n\nSupport team जल्द ही तुम्हारी मदद करेगा।\n\nअपनी समस्या यहाँ बताओ।`
         )
         .setTimestamp();
 
-      const row1 = new ActionRowBuilder().addComponents(
+      const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId("ticket:claim")
           .setLabel("Claim")
-          .setEmoji("🙋")
           .setStyle(ButtonStyle.Primary),
+
+        new ButtonBuilder()
+          .setCustomId("ticket:transcript")
+          .setLabel("Transcript")
+          .setStyle(ButtonStyle.Secondary),
 
         new ButtonBuilder()
           .setCustomId("ticket:close")
           .setLabel("Close")
-          .setEmoji("🔒")
           .setStyle(ButtonStyle.Danger)
       );
 
-      const row2 = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId("ticket:reopen")
-          .setLabel("Reopen")
-          .setEmoji("🔓")
-          .setStyle(ButtonStyle.Success)
-      );
-
       await channel.send({
-        content: config.staffRoleId
-          ? `<@&${config.staffRoleId}> ${user}`
-          : `${user}`,
+        content: `<@${user.id}>${config.staffRoleId ? ` <@&${config.staffRoleId}>` : ""}`,
         embeds: [embed],
-        components: [row1, row2]
+        components: [row]
       });
 
       return interaction.editReply(
-        `✅ तुम्हारा Ticket बन गया: ${channel}`
+        `✅ तुम्हारा ticket बन गया: ${channel}`
       );
-
     } catch (error) {
       console.error("Ticket Create Error:", error);
 
       return interaction.editReply(
-        "❌ Ticket बनाते समय Error आया। Bot Permissions और Ticket Settings चेक करो।"
-      ).catch(() => {});
+        "❌ Ticket बनाते समय error आया।"
+      );
     }
   }
 };
