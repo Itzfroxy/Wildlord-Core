@@ -1,3 +1,4 @@
+
 const {
   SlashCommandBuilder,
   PermissionFlagsBits,
@@ -5,6 +6,47 @@ const {
 } = require("discord.js");
 
 const { getTicketData } = require("../../utils/ticketManager");
+
+function createStatsEmbed(guildId) {
+  const tickets = getTicketData(guildId).tickets;
+
+  const feedbacks = tickets
+    .map(ticket => ticket.feedback)
+    .filter(feedback =>
+      feedback &&
+      Number.isInteger(Number(feedback.rating)) &&
+      Number(feedback.rating) >= 1 &&
+      Number(feedback.rating) <= 5
+    );
+
+  if (!feedbacks.length) return null;
+
+  const total = feedbacks.length;
+
+  const average = feedbacks.reduce(
+    (sum, feedback) => sum + Number(feedback.rating),
+    0
+  ) / total;
+
+  const counts = [1, 2, 3, 4, 5].map(rating =>
+    feedbacks.filter(
+      feedback => Number(feedback.rating) === rating
+    ).length
+  );
+
+  return new EmbedBuilder()
+    .setColor("#F1C40F")
+    .setTitle("⭐ Ticket Feedback Statistics")
+    .addFields(
+      { name: "Total Reviews", value: `${total}`, inline: true },
+      { name: "Average Rating", value: `${average.toFixed(2)}/5 ⭐`, inline: true },
+      { name: "⭐ 1 Star", value: `${counts[0]}`, inline: true },
+      { name: "⭐⭐ 2 Stars", value: `${counts[1]}`, inline: true },
+      { name: "⭐⭐⭐ 3 Stars", value: `${counts[2]}`, inline: true },
+      { name: "⭐⭐⭐⭐ 4 Stars", value: `${counts[3]}`, inline: true },
+      { name: "⭐⭐⭐⭐⭐ 5 Stars", value: `${counts[4]}`, inline: true }
+    );
+}
 
 module.exports = {
   name: "ticketfeedbackstats",
@@ -19,36 +61,11 @@ module.exports = {
       return message.reply("❌ तुम्हें Manage Channels permission चाहिए।");
     }
 
-    const data = getTicketData(message.guild.id);
-    const tickets = Object.values(data.tickets || {});
+    const embed = createStatsEmbed(message.guild.id);
 
-    const feedbacks = tickets
-      .map(ticket => ticket.feedback)
-      .filter(Boolean);
-
-    if (!feedbacks.length) {
+    if (!embed) {
       return message.reply("📭 अभी कोई Ticket Feedback उपलब्ध नहीं है।");
     }
-
-    const total = feedbacks.length;
-    const average = feedbacks.reduce((sum, f) => sum + f.rating, 0) / total;
-
-    const counts = [1, 2, 3, 4, 5].map(rating =>
-      feedbacks.filter(f => f.rating === rating).length
-    );
-
-    const embed = new EmbedBuilder()
-      .setColor("#F1C40F")
-      .setTitle("⭐ Ticket Feedback Statistics")
-      .addFields(
-        { name: "Total Reviews", value: `${total}`, inline: true },
-        { name: "Average Rating", value: `${average.toFixed(2)}/5 ⭐`, inline: true },
-        { name: "⭐ 1 Star", value: `${counts[0]}`, inline: true },
-        { name: "⭐⭐ 2 Stars", value: `${counts[1]}`, inline: true },
-        { name: "⭐⭐⭐ 3 Stars", value: `${counts[2]}`, inline: true },
-        { name: "⭐⭐⭐⭐ 4 Stars", value: `${counts[3]}`, inline: true },
-        { name: "⭐⭐⭐⭐⭐ 5 Stars", value: `${counts[4]}`, inline: true }
-      );
 
     return message.reply({ embeds: [embed] });
   },
@@ -61,39 +78,14 @@ module.exports = {
       });
     }
 
-    const data = getTicketData(interaction.guild.id);
-    const tickets = Object.values(data.tickets || {});
+    const embed = createStatsEmbed(interaction.guild.id);
 
-    const feedbacks = tickets
-      .map(ticket => ticket.feedback)
-      .filter(Boolean);
-
-    if (!feedbacks.length) {
+    if (!embed) {
       return interaction.reply({
         content: "📭 अभी कोई Ticket Feedback उपलब्ध नहीं है।",
         ephemeral: true
       });
     }
-
-    const total = feedbacks.length;
-    const average = feedbacks.reduce((sum, f) => sum + f.rating, 0) / total;
-
-    const counts = [1, 2, 3, 4, 5].map(rating =>
-      feedbacks.filter(f => f.rating === rating).length
-    );
-
-    const embed = new EmbedBuilder()
-      .setColor("#F1C40F")
-      .setTitle("⭐ Ticket Feedback Statistics")
-      .addFields(
-        { name: "Total Reviews", value: `${total}`, inline: true },
-        { name: "Average Rating", value: `${average.toFixed(2)}/5 ⭐`, inline: true },
-        { name: "⭐ 1 Star", value: `${counts[0]}`, inline: true },
-        { name: "⭐⭐ 2 Stars", value: `${counts[1]}`, inline: true },
-        { name: "⭐⭐⭐ 3 Stars", value: `${counts[2]}`, inline: true },
-        { name: "⭐⭐⭐⭐ 4 Stars", value: `${counts[3]}`, inline: true },
-        { name: "⭐⭐⭐⭐⭐ 5 Stars", value: `${counts[4]}`, inline: true }
-      );
 
     return interaction.reply({
       embeds: [embed],
