@@ -1,3 +1,4 @@
+
 const {
   SlashCommandBuilder,
   PermissionFlagsBits,
@@ -5,6 +6,35 @@ const {
 } = require("discord.js");
 
 const { getTicket } = require("../../utils/ticketManager");
+
+function createNotesEmbed(ticket) {
+  const notes = Array.isArray(ticket.notes)
+    ? ticket.notes.filter(note => note && typeof note.text === "string")
+    : [];
+
+  if (!notes.length) return null;
+
+  const recentNotes = notes.slice(-10);
+
+  const description = recentNotes.map((note, i) => {
+    const author = note.authorId ? `<@${note.authorId}>` : "Unknown Staff";
+    const date = Number(note.createdAt);
+
+    const timestamp = Number.isFinite(date) && date > 0
+      ? `<t:${Math.floor(date / 1000)}:R>`
+      : "Unknown date";
+
+    const text = note.text.slice(0, 800);
+
+    return `**${i + 1}.** ${text}\n${author} • ${timestamp}`;
+  }).join("\n\n");
+
+  return new EmbedBuilder()
+    .setColor("#5865F2")
+    .setTitle("📋 Ticket Staff Notes")
+    .setDescription(description.slice(0, 4000))
+    .setFooter({ text: `Total Notes: ${notes.length}` });
+}
 
 module.exports = {
   name: "ticketnotes",
@@ -25,22 +55,11 @@ module.exports = {
       return message.reply("❌ यह Ticket Channel नहीं है।");
     }
 
-    const notes = ticket.notes || [];
+    const embed = createNotesEmbed(ticket);
 
-    if (!notes.length) {
+    if (!embed) {
       return message.reply("📭 इस Ticket में अभी कोई Staff Note नहीं है।");
     }
-
-    const embed = new EmbedBuilder()
-      .setColor("#5865F2")
-      .setTitle("📋 Ticket Staff Notes")
-      .setDescription(
-        notes.slice(-10).map((note, i) =>
-          `**${i + 1}.** ${note.text}\n` +
-          `<@${note.authorId}> • <t:${Math.floor(note.createdAt / 1000)}:R>`
-        ).join("\n\n")
-      )
-      .setFooter({ text: `Total Notes: ${notes.length}` });
 
     return message.reply({ embeds: [embed] });
   },
@@ -62,25 +81,14 @@ module.exports = {
       });
     }
 
-    const notes = ticket.notes || [];
+    const embed = createNotesEmbed(ticket);
 
-    if (!notes.length) {
+    if (!embed) {
       return interaction.reply({
         content: "📭 इस Ticket में अभी कोई Staff Note नहीं है।",
         ephemeral: true
       });
     }
-
-    const embed = new EmbedBuilder()
-      .setColor("#5865F2")
-      .setTitle("📋 Ticket Staff Notes")
-      .setDescription(
-        notes.slice(-10).map((note, i) =>
-          `**${i + 1}.** ${note.text}\n` +
-          `<@${note.authorId}> • <t:${Math.floor(note.createdAt / 1000)}:R>`
-        ).join("\n\n")
-      )
-      .setFooter({ text: `Total Notes: ${notes.length}` });
 
     return interaction.reply({
       embeds: [embed],
