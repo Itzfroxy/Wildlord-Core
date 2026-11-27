@@ -1,3 +1,6 @@
+
+const startTempBanHandler = require("../handlers/tempBanHandler");
+
 module.exports = {
   name: "clientReady",
   once: true,
@@ -19,5 +22,8 @@ module.exports = {
       ],
       status: "online"
     });
+
+    // Start Temporary Ban Expiry Checker
+    startTempBanHandler(client);
   }
 };

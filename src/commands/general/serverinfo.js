@@ -1,7 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
 async function createServerEmbed(guild) {
-  await guild.fetch();
 
   const owner = await guild.fetchOwner();
   const members = await guild.members.fetch();
