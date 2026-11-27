@@ -1,3 +1,4 @@
+
 const {
   SlashCommandBuilder,
   EmbedBuilder
@@ -126,7 +127,7 @@ module.exports = {
 };
 
 async function sendFeedbackLog(guild, ticket) {
-  const config = getTicketData(guild.id);
+  const config = getTicketData(guild.id).ticketConfig;
 
   if (!config.feedbackChannelId) return;
 
@@ -142,10 +143,10 @@ async function sendFeedbackLog(guild, ticket) {
     .addFields(
       { name: "Ticket Owner", value: `<@${ticket.ownerId}>`, inline: true },
       { name: "Rating", value: `${feedback.rating}/5 ⭐`, inline: true },
-      { name: "Ticket Channel", value: `${ticket.channelId || "Unknown"}`, inline: true },
+      { name: "Ticket Channel", value: `<#${ticket.channelId}>`, inline: true },
       { name: "Comment", value: feedback.comment || "No comment" }
     )
-    .setTimestamp(feedback.createdAt);
+    .setTimestamp(new Date(feedback.createdAt));
 
   await channel.send({ embeds: [embed] }).catch(() => null);
 }
